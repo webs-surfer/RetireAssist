@@ -69,7 +69,7 @@ export default function LoginScreen() {
       }
 
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: biometricType === 'face' ? 'Scan your face to sign in' : 'Scan your fingerprint to sign in',
+        promptMessage: 'Scan your fingerprint to sign in',
         fallbackLabel: 'Use Password',
         disableDeviceFallback: false,
         cancelLabel: 'Cancel',
@@ -116,8 +116,8 @@ export default function LoginScreen() {
         const alreadySaved = await AsyncStorage.getItem('biometric_email');
         if (!alreadySaved) {
           Alert.alert(
-            biometricType === 'face' ? '😊 Enable Face ID?' : '👆 Enable Fingerprint Login?',
-            `Use your ${biometricType === 'face' ? 'face' : 'fingerprint'} to sign in faster next time.`,
+            '👆 Enable Fingerprint Login?',
+            `Use your fingerprint to sign in faster next time.`,
             [
               { text: 'Not Now', style: 'cancel' },
               {
@@ -169,11 +169,11 @@ export default function LoginScreen() {
                   disabled={loading}
                 >
                   <Text style={styles.biometricIcon}>
-                    {biometricType === 'face' ? '😊' : '👆'}
+                    👆
                   </Text>
                   <View>
                     <Text style={styles.biometricTitle}>
-                      {biometricType === 'face' ? 'Sign in with Face ID' : 'Sign in with Fingerprint'}
+                      Sign in with Fingerprint
                     </Text>
                     <Text style={styles.biometricSub}>Tap to authenticate instantly</Text>
                   </View>

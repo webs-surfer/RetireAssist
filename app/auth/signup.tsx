@@ -101,9 +101,7 @@ export default function SignupScreen() {
   const handleEnrollBiometric = async () => {
     try {
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: biometricType === 'face'
-          ? 'Scan your face to set up Face ID login'
-          : 'Touch the fingerprint sensor to register your fingerprint',
+        promptMessage: 'Touch the fingerprint sensor to register your fingerprint',
         fallbackLabel: 'Skip',
         disableDeviceFallback: false,
         cancelLabel: 'Skip',
@@ -115,7 +113,7 @@ export default function SignupScreen() {
         setBiometricEnrolled(true);
         Alert.alert(
           '🎉 Fingerprint Registered!',
-          `You can now sign in with your ${biometricType === 'face' ? 'face' : 'fingerprint'} instead of your password.`,
+          `You can now sign in with your fingerprint instead of your password.`,
           [{ text: 'Continue', onPress: () => router.replace('/auth/role-select') }]
         );
       } else {
@@ -231,10 +229,10 @@ export default function SignupScreen() {
               <>
                 <View style={styles.biometricHero}>
                   <Text style={styles.biometricHeroIcon}>
-                    {biometricType === 'face' ? '😊' : '👆'}
+                    👆
                   </Text>
                   <Text style={styles.biometricHeroTitle}>
-                    {biometricType === 'face' ? 'Set Up Face ID' : 'Register Your Fingerprint'}
+                    Register Your Fingerprint
                   </Text>
                   <Text style={styles.biometricHeroSub}>
                     Sign in quickly and securely without typing your password every time.
@@ -261,9 +259,9 @@ export default function SignupScreen() {
                 ) : (
                   <>
                     <TouchableOpacity activeOpacity={0.88} style={styles.enrollBtn} onPress={handleEnrollBiometric}>
-                      <Text style={styles.enrollBtnIcon}>{biometricType === 'face' ? '😊' : '👆'}</Text>
+                      <Text style={styles.enrollBtnIcon}>👆</Text>
                       <Text style={styles.enrollBtnText}>
-                        {biometricType === 'face' ? 'Set Up Face ID' : 'Register Fingerprint'}
+                        Register Fingerprint
                       </Text>
                     </TouchableOpacity>
 
