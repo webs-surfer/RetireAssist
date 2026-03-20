@@ -1,0 +1,68 @@
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+
+const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, 'Name is required'],
+    trim: true,
+    maxlength: [100, 'Name cannot exceed 100 characters'],
+  },
+  email: {
+    type: String,
+    required: [true, 'Email is required'],
+    unique: true,
+    lowercase: true,
+    trim: true,
+    match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email'],
+  },
+  password: {
+    type: String,
+    minlength: [6, 'Password must be at least 6 characters'],
+    select: false,
+  },
+  authProvider: {
+    type: String,
+    enum: ['email', 'google'],
+    default: 'email',
+  },
+  googleId: { type: String, sparse: true },
+  role: {
+    type: String,
+    enum: ['user', 'helper', 'admin'],
+    default: 'user',
+  },
+  age: { type: Number, min: 18, max: 120 },
+  gender: { type: String, enum: ['Male', 'Female', 'Other', 'Prefer not to say'] },
+  phone: { type: String, trim: true },
+  photo: { type: String }, // profile photo URL
+  preferredLanguage: { type: String, default: 'Hindi' },
+  location: {
+    type: { type: String, enum: ['Point'], default: 'Point' },
+    coordinates: { type: [Number], default: [0, 0] },
+    address: String,
+    city: String,
+  },
+  profileCompleted: { type: Boolean, default: false },
+  kycStatus: { type: String, enum: ['pending', 'approved', 'rejected', 'unverified'], default: 'unverified' },
+  isActive: { type: Boolean, default: true },
+  fcmToken: String,
+}, { timestamps: true });
+
+// Geospatial index
+userSchema.index({ location: '2dsphere' });
+
+// Hash password before saving
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password') || !this.password) return next();
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
+
+// Compare password method
+userSchema.methods.matchPassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
+
+module.exports = mongoose.model('User', userSchema);

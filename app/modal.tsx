@@ -1,29 +1,23 @@
 import { Link } from 'expo-router';
-import { StyleSheet } from 'react-native';
-
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { Colors, Spacing, Radius } from '../constants/theme';
 
 export default function ModalScreen() {
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="title">This is a modal</ThemedText>
-      <Link href="/" dismissTo style={styles.link}>
-        <ThemedText type="link">Go to home screen</ThemedText>
+    <View style={styles.container}>
+      <Text style={styles.title}>Modal</Text>
+      <Link href="/" dismissTo>
+        <TouchableOpacity style={styles.button}>
+          <Text style={styles.buttonText}>Go to Home</Text>
+        </TouchableOpacity>
       </Link>
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  link: {
-    marginTop: 15,
-    paddingVertical: 15,
-  },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.lg, backgroundColor: Colors.background },
+  title: { fontSize: 24, fontWeight: 'bold', color: Colors.text, marginBottom: Spacing.lg },
+  button: { backgroundColor: Colors.primary, paddingVertical: Spacing.md, paddingHorizontal: Spacing.xl, borderRadius: Radius.md },
+  buttonText: { color: Colors.white, fontSize: 16, fontWeight: 'bold' },
 });
