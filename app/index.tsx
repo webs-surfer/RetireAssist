@@ -9,6 +9,7 @@ import {
   ScrollView,
   Dimensions,
   StatusBar,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Radius, Shadow, Spacing } from '../constants/theme';
@@ -105,7 +106,7 @@ export default function LandingScreen() {
             {/* Logo */}
             <Animated.View style={[styles.logoOuter, { transform: [{ scale: pulse }] }]}>
               <View style={styles.logoInner}>
-                <Text style={styles.logoEmoji}>🌅</Text>
+                <Image source={require('../assets/images/LOGO.png')} style={{ width: 50, height: 50 }} resizeMode="contain" />
               </View>
             </Animated.View>
 
