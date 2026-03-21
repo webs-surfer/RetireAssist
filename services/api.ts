@@ -64,7 +64,12 @@ export const apiGetMyChats = () => api.get('/chat/my-chats');
 
 // ── Documents ──
 export const apiGetDocument = (taskId: string) => api.get(`/document/${taskId}`);
-export const apiUploadDocument = (formData: FormData) => api.post('/document/upload', formData);
+export const apiGetMyDocuments = () => api.get('/document/my-documents');
+export const apiUploadDocument = (formData: FormData) =>
+  api.post('/document/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    transformRequest: (data) => data, // Prevent Axios from serializing FormData
+  });
 
 // ── Payments ──
 export const apiCreatePayment = (data: object) => api.post('/payment/create', data);
@@ -82,7 +87,12 @@ export const apiPostAIChat = (messages: any) => api.post('/aichat', { messages }
 export const apiClearAIChat = () => api.delete('/aichat');
 
 // ── OCR ──
-export const apiOcrAadhaar = (formData: FormData) => api.post('/ocr/aadhaar', formData);
+export const apiOcrAadhaar = (formData: FormData) =>
+  api.post('/ocr/aadhaar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    transformRequest: (data) => data,
+  });
+export const apiOcrDemo = () => api.post('/ocr/demo');
 
 // ── Admin ──
 export const apiAdminGetStats = () => api.get('/admin/stats');

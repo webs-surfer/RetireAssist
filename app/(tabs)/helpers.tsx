@@ -7,7 +7,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import MapView, { Marker, Circle } from 'react-native-maps';
-import { Colors, Radius, Shadow, Spacing } from '../../constants/theme';
+import { Colors, Radius, Shadow, Spacing, Typography, AnimConfig } from '../../constants/theme';
 import { apiGetNearbyHelpers } from '../../services/api';
 
 type Helper = {
@@ -36,8 +36,8 @@ export default function HelpersScreen() {
     setLoading(true);
     setHelpers([]);
     try {
-      let lat = 25.5941;
-      let lng = 85.1376;
+      let lat = 28.4744;
+      let lng = 77.4900;
 
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
@@ -103,7 +103,7 @@ export default function HelpersScreen() {
     // spread helpers around user if no coords stored
     return userLocation
       ? { latitude: userLocation.latitude + (Math.random() - 0.5) * 0.05, longitude: userLocation.longitude + (Math.random() - 0.5) * 0.05 }
-      : { latitude: 25.5941, longitude: 85.1376 };
+      : { latitude: 28.4744, longitude: 77.4900 };
   };
 
   return (
@@ -161,8 +161,8 @@ export default function HelpersScreen() {
             showsUserLocation
             showsMyLocationButton
             initialRegion={{
-              latitude: userLocation?.latitude ?? 25.5941,
-              longitude: userLocation?.longitude ?? 85.1376,
+              latitude: userLocation?.latitude ?? 28.4744,
+              longitude: userLocation?.longitude ?? 77.4900,
               latitudeDelta: 0.15,
               longitudeDelta: 0.15,
             }}

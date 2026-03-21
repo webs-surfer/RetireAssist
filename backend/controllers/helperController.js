@@ -40,28 +40,52 @@ const submitKYC = async (req, res) => {
 // @access  Private
 const getNearbyHelpers = async (req, res) => {
   try {
-    const { lat, lng, radius = 10000, service } = req.query;
+    const { lat, lng, radius = 50000, service } = req.query;
 
-    if (!lat || !lng) {
-      return sendError(res, 400, 'Latitude and longitude are required');
+    let helperProfiles = [];
+
+    // Try geospatial query first
+    if (lat && lng) {
+      try {
+        const geoQuery = {
+          kycStatus: 'approved',
+          isAvailable: true,
+          location: {
+            $near: {
+              $geometry: { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] },
+              $maxDistance: parseInt(radius),
+            },
+          },
+        };
+
+        if (service) {
+          geoQuery.servicesOffered = { $in: [service] };
+        }
+
+        helperProfiles = await HelperProfile.find(geoQuery).populate('userId', 'name phone');
+      } catch (geoErr) {
+        console.warn('Geo query failed, falling back to basic query:', geoErr.message);
+      }
     }
 
-    const query = {
-      kycStatus: 'approved',
-      isAvailable: true,
-      location: {
-        $near: {
-          $geometry: { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] },
-          $maxDistance: parseInt(radius),
-        },
-      },
-    };
+    // Fallback: if geo query failed or returned nothing, get all approved helpers
+    if (helperProfiles.length === 0) {
+      const fallbackQuery = {
+        kycStatus: 'approved',
+      };
 
-    if (service) {
-      query.servicesOffered = { $in: [service] };
+      if (service) {
+        fallbackQuery.servicesOffered = { $in: [service] };
+      }
+
+      helperProfiles = await HelperProfile.find(fallbackQuery)
+        .populate('userId', 'name phone')
+        .sort({ rating: -1, totalJobs: -1 })
+        .limit(30);
     }
 
-    const helperProfiles = await HelperProfile.find(query).populate('userId', 'name phone');
+    // Filter out profiles where userId is null (deleted users)
+    helperProfiles = helperProfiles.filter(h => h.userId);
 
     const helpers = helperProfiles.map(h => ({
       id: h.userId._id,

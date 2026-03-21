@@ -31,15 +31,28 @@ export default function HelperProfileScreen() {
   const [hiring, setHiring] = useState(false);
 
   const handleHire = async () => {
+    if (!params.id) {
+      Alert.alert('Error', 'Helper ID is missing. Please go back and try again.');
+      return;
+    }
+    if (!selectedService) {
+      Alert.alert('Error', 'Please select a service.');
+      return;
+    }
     setHiring(true);
     try {
-      await apiCreateTask({
+      const priceVal = parseInt(budget);
+      const taskData: any = {
         helperId: params.id,
         serviceType: selectedService,
-        description: message || `Need help with ${selectedService}`,
-        proposedPrice: parseInt(budget) || 400,
-        instructions: message,
-      });
+        description: message && message.trim() ? message.trim() : `Need help with ${selectedService}`,
+        proposedPrice: !isNaN(priceVal) && priceVal > 0 ? priceVal : 400,
+      };
+      // Only add instructions if user actually typed something
+      if (message && message.trim()) {
+        taskData.instructions = message.trim();
+      }
+      await apiCreateTask(taskData);
       setSuccess(true);
       setTimeout(() => {
         setShowModal(false);
@@ -47,7 +60,9 @@ export default function HelperProfileScreen() {
         router.push('/(tabs)/tasks');
       }, 1800);
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to send request');
+      const errMsg = error.response?.data?.errors?.join(', ') || error.response?.data?.message || 'Failed to send request';
+      Alert.alert('Request Failed', errMsg);
+      console.warn('Task creation error:', error.response?.data || error.message);
     } finally {
       setHiring(false);
     }
@@ -158,8 +173,12 @@ export default function HelperProfileScreen() {
                 <TextInput style={styles.modalInput} placeholder="e.g. 400" keyboardType="numeric" placeholderTextColor={Colors.textMuted} value={budget} onChangeText={setBudget} />
                 <Text style={styles.modalLabel}>Message (optional)</Text>
                 <TextInput style={[styles.modalInput, { height: 90, textAlignVertical: 'top' }]} placeholder="Describe what you need help with..." multiline placeholderTextColor={Colors.textMuted} value={message} onChangeText={setMessage} />
-                <TouchableOpacity activeOpacity={0.85} style={styles.submitBtn} onPress={handleHire}>
-                  <Text style={styles.submitBtnText}>Send Request 🤝</Text>
+                <TouchableOpacity activeOpacity={0.85} style={[styles.submitBtn, hiring && { opacity: 0.6 }]} onPress={handleHire} disabled={hiring}>
+                  {hiring ? (
+                    <ActivityIndicator size="small" color={Colors.white} />
+                  ) : (
+                    <Text style={styles.submitBtnText}>Send Request 🤝</Text>
+                  )}
                 </TouchableOpacity>
               </>
             )}

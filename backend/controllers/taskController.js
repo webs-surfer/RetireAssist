@@ -13,24 +13,36 @@ const createTask = async (req, res) => {
   try {
     const { helperId, serviceType, description, proposedPrice, instructions } = req.body;
 
+    if (!helperId || !serviceType) {
+      return sendError(res, 400, 'helperId and serviceType are required');
+    }
+
+    console.log('[Task Create] User:', req.user._id, 'Helper:', helperId, 'Service:', serviceType, 'Price:', proposedPrice);
+
     const task = await Task.create({
       userId: req.user._id,
       helperId,
       serviceType,
-      description,
-      proposedPrice,
+      description: description || `Need help with ${serviceType}`,
+      proposedPrice: proposedPrice || 0,
       price: proposedPrice || 0,
-      instructions,
+      instructions: instructions || '',
       status: 'pending',
       stage: 1,
       stageLabel: STAGES[0],
     });
 
+    console.log('[Task Create] Created:', task._id);
+
     // Create chat room for this task
-    await Chat.create({
-      taskId: task._id,
-      participants: [req.user._id, helperId],
-    });
+    try {
+      await Chat.create({
+        taskId: task._id,
+        participants: [req.user._id, helperId],
+      });
+    } catch (chatErr) {
+      console.warn('[Task Create] Chat room creation failed:', chatErr.message);
+    }
 
     // Emit to helper via socket
     const io = req.app.get('io');
@@ -38,18 +50,23 @@ const createTask = async (req, res) => {
 
     // Create notification for helper
     if (helperId) {
-      await createNotification(io, helperId, {
-        type: 'task',
-        title: 'New Task Request',
-        message: `You have a new ${serviceType} request.`,
-        icon: '📋',
-        relatedId: task._id,
-        relatedModel: 'Task',
-      });
+      try {
+        await createNotification(io, helperId, {
+          type: 'task',
+          title: 'New Task Request',
+          message: `You have a new ${serviceType} request.`,
+          icon: '📋',
+          relatedId: task._id,
+          relatedModel: 'Task',
+        });
+      } catch (notifErr) {
+        console.warn('[Task Create] Notification failed:', notifErr.message);
+      }
     }
 
     return sendSuccess(res, 201, 'Task request sent successfully', { task });
   } catch (error) {
+    console.error('[Task Create Error]:', error);
     return sendError(res, 500, error.message);
   }
 };
