@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ScrollView, StyleSheet, Text, TouchableOpacity, View,
@@ -7,6 +7,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import MapView, { Marker, Circle } from 'react-native-maps';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors, Radius, Shadow, Spacing, Typography, AnimConfig } from '../../constants/theme';
 import { apiGetNearbyHelpers } from '../../services/api';
 
@@ -22,6 +23,22 @@ const SERVICE_FILTERS = ['All', 'Pension', 'Insurance', 'Government', 'Health', 
 
 export default function HelpersScreen() {
   const router = useRouter();
+
+  useFocusEffect(
+    useCallback(() => {
+      const checkRole = async () => {
+        const stored = await AsyncStorage.getItem('user');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed.role === 'helper') {
+            router.replace('/(tabs)/helper-dashboard');
+          }
+        }
+      };
+      checkRole();
+    }, [router])
+  );
+
   const mapRef = useRef<MapView>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [activeFilter, setActiveFilter] = useState('All');

@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors, Spacing, Radius, Shadow } from '../../constants/theme';
 import { apiOcrAadhaar } from '../../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function HelperOnboardingScreen() {
   const router = useRouter();
@@ -115,7 +116,16 @@ export default function HelperOnboardingScreen() {
             <Text style={styles.checkItem}>⏳ Pending Admin Approval</Text>
           </View>
 
-          <TouchableOpacity activeOpacity={0.85} style={styles.successBtn} onPress={() => router.replace('/(tabs)')}>
+          <TouchableOpacity activeOpacity={0.85} style={styles.successBtn} onPress={async () => {
+              await AsyncStorage.setItem('role', 'helper');
+              const stored = await AsyncStorage.getItem('user');
+              if (stored) {
+                const parsed = JSON.parse(stored);
+                parsed.role = 'helper';
+                await AsyncStorage.setItem('user', JSON.stringify(parsed));
+              }
+              router.replace('/(tabs)/helper-dashboard');
+            }}>
             <Text style={styles.successBtnText}>Go to Dashboard</Text>
           </TouchableOpacity>
         </View>

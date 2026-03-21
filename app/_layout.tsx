@@ -21,6 +21,12 @@ export default function RootLayout() {
         <Stack.Screen name="chat/[taskId]" />
         <Stack.Screen name="payment/[taskId]" />
         <Stack.Screen name="task-detail/[taskId]" />
+        <Stack.Screen name="my-chats" />
+        <Stack.Screen name="payment-history" />
+        <Stack.Screen name="settings/security" />
+        <Stack.Screen name="settings/language" />
+        <Stack.Screen name="settings/help" />
+        <Stack.Screen name="settings/terms" />
       </Stack>
     </>
   );

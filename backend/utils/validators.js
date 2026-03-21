@@ -1,14 +1,17 @@
 const Joi = require('joi');
 
 const signupSchema = Joi.object({
-  name: Joi.string().min(2).max(100).required(),
-  email: Joi.string().email().required(),
-  password: Joi.string().min(6).required(),
+  name: Joi.string().min(2).max(100).required()
+    .messages({ 'string.min': 'Name must be at least 2 characters', 'any.required': 'Name is required' }),
+  email: Joi.string().email().required()
+    .messages({ 'string.email': 'Please enter a valid email address', 'any.required': 'Email is required' }),
+  password: Joi.string().min(6).required()
+    .messages({ 'string.min': 'Password must be at least 6 characters', 'any.required': 'Password is required' }),
   role: Joi.string().valid('user', 'helper').default('user'),
-  phone: Joi.string().pattern(/^[6-9]\d{9}$/).optional().allow('', null),
-  age: Joi.number().min(18).max(120).optional().allow(null),
+  phone: Joi.string().optional().allow('', null),
+  age: Joi.number().optional().allow(null, ''),
   city: Joi.string().optional().allow('', null),
-});
+}).options({ stripUnknown: true });
 
 const loginSchema = Joi.object({
   email: Joi.string().email().required(),

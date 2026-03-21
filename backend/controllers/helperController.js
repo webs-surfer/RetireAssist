@@ -25,11 +25,17 @@ const submitKYC = async (req, res) => {
     profile.experience = experience || 0;
     profile.languages = JSON.parse(languages || '["Hindi"]');
     profile.priceRange = { min: priceMin || 200, max: priceMax || 500 };
-    profile.kycStatus = 'pending';
+    profile.kycStatus = 'approved'; // Auto-approved for testing
+    profile.isAvailable = true; // Auto-available for testing
+    profile.location = {
+      type: 'Point',
+      coordinates: [77.4900 + (Math.random() - 0.5) * 0.05, 28.4744 + (Math.random() - 0.5) * 0.05], // Random around Greater Noida Knowledge Park III
+      city: 'Greater Noida'
+    };
 
     await profile.save();
 
-    return sendSuccess(res, 200, 'KYC submitted. Awaiting admin verification.', { profile });
+    return sendSuccess(res, 200, 'KYC submitted and auto-approved for testing.', { profile });
   } catch (error) {
     return sendError(res, 500, error.message);
   }

@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   Animated, ScrollView, StyleSheet, Text, TextInput,
   TouchableOpacity, View, ActivityIndicator, Dimensions
@@ -15,6 +15,21 @@ type ServiceItem = { _id: string; title: string; icon: string; color: string; ca
 
 export default function HomeScreen() {
   const router = useRouter();
+
+  useFocusEffect(
+    useCallback(() => {
+      const checkRole = async () => {
+        const stored = await AsyncStorage.getItem('user');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed.role === 'helper') {
+            router.replace('/(tabs)/helper-dashboard');
+          }
+        }
+      };
+      checkRole();
+    }, [router])
+  );
 
   // Staggered entrance animations
   const headerAnim = useRef(new Animated.Value(0)).current;

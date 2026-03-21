@@ -92,7 +92,11 @@ export default function SignupScreen() {
         router.replace('/auth/role-select');
       }
     } catch (error: any) {
-      Alert.alert('Signup Failed', error.response?.data?.message || 'Something went wrong. Please try again.');
+      const errors = error.response?.data?.errors;
+      const msg = errors && errors.length > 0
+        ? errors.join('\n')
+        : error.response?.data?.message || 'Something went wrong. Please try again.';
+      Alert.alert('Signup Failed', msg);
     } finally {
       setLoading(false);
     }

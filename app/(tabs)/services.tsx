@@ -1,7 +1,7 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors, Spacing, Radius, Shadow } from '../../constants/theme';
 import { apiGetServices } from '../../services/api';
@@ -13,6 +13,22 @@ type ServiceItem = {
 
 export default function ServicesScreen() {
   const router = useRouter();
+
+  useFocusEffect(
+    useCallback(() => {
+      const checkRole = async () => {
+        const stored = await AsyncStorage.getItem('user');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed.role === 'helper') {
+            router.replace('/(tabs)/helper-dashboard');
+          }
+        }
+      };
+      checkRole();
+    }, [router])
+  );
+
   const [activeCategory, setActiveCategory] = useState('All');
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);

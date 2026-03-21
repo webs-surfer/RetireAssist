@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, Radius, Shadow } from '../../constants/theme';
-import { apiGetUserTasks, apiRateTask } from '../../services/api';
+import { apiGetUserTasks, apiGetHelperTasks, apiRateTask } from '../../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type TaskItem = {
   _id: string; serviceType: string; status: string; stage: number;
@@ -26,7 +27,10 @@ export default function TasksScreen() {
   const fetchTasks = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiGetUserTasks();
+      const stored = await AsyncStorage.getItem('user');
+      const parsed = stored ? JSON.parse(stored) : {};
+      const isHelper = parsed.role === 'helper';
+      const res = isHelper ? await apiGetHelperTasks() : await apiGetUserTasks();
       setTasks(res.data.data.tasks || []);
     } catch {
       setTasks([]);

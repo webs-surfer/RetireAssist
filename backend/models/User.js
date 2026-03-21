@@ -32,7 +32,7 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'helper', 'admin'],
     default: 'user',
   },
-  age: { type: Number, min: 18, max: 120 },
+  age: { type: Number },
   gender: { type: String, enum: ['Male', 'Female', 'Other', 'Prefer not to say'] },
   phone: { type: String, trim: true },
   photo: { type: String }, // profile photo URL
