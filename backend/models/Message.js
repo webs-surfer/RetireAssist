@@ -1,34 +1,15 @@
 const mongoose = require('mongoose');
 
 const messageSchema = new mongoose.Schema({
-  chatId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Chat',
-    required: true,
-  },
-  senderId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
-  },
-  text: {
-    type: String,
-    trim: true,
-  },
-  attachments: [{
-    url: String,
-    type: { type: String, enum: ['image', 'pdf', 'document'] },
-    name: String,
-  }],
-  isRead: {
-    type: Boolean,
-    default: false,
-  },
-  messageType: {
-    type: String,
-    enum: ['text', 'file', 'system'],
-    default: 'text',
-  },
+    room: { type: String, required: true }, // requestId used as room
+    sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    senderName: { type: String, required: true },
+    senderRole: { type: String, enum: ['user', 'helper', 'admin'], required: true },
+    content: { type: String, required: true },
+    type: { type: String, enum: ['text', 'image', 'file', 'system'], default: 'text' },
+    fileUrl: { type: String, default: '' },
+    readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    isRead: { type: Boolean, default: false }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Message', messageSchema);

@@ -1,39 +1,23 @@
 const mongoose = require('mongoose');
 
 const documentSchema = new mongoose.Schema({
-  taskId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Task',
-    // required: true, // Made optional for general documents
-  },
-  uploadedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
-  },
-  fileName: String,
-  fileUrl: {
-    type: String,
-    required: true,
-  },
-  fileType: String,
-  fileSize: Number,
-  status: {
-    type: String,
-    enum: ['pending', 'approved', 'rejected'],
-    default: 'pending',
-  },
-  adminFeedback: String,
-  reviewedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  },
-  reviewedAt: Date,
-  isLocked: {
-    type: Boolean,
-    default: true,
-  },
-  unlockedAt: Date,
+    uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    // Encrypted payload — server never sees plaintext
+    encryptedBlob: { type: Buffer, required: true },
+    iv: { type: String, required: true },   // base64 12-byte nonce
+    fileType: { type: String, default: 'application/octet-stream' },
+    originalName: { type: String, default: 'document' },
+    docType: {
+        type: String,
+        enum: ['pension_certificate', 'aadhaar', 'pan', 'photo', 'other'],
+        default: 'other'
+    },
+    size: { type: Number, default: 0 },
+    // Per-helper RSA-OAEP wrapped AES key shares
+    taskShares: [{
+        helperId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        encryptedKey: { type: String } // base64 RSA-OAEP encrypted AES key
+    }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('Document', documentSchema);

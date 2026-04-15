@@ -1,220 +1,144 @@
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-dotenv.config();
+const User = require('./models/User');
+const Document = require('./models/Document');
+const Reminder = require('./models/Reminder');
 
-const Service = require('./models/Service');
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/retireassist';
 
-const services = [
-  {
-    title: 'Old Age Pension',
-    category: 'Pension',
-    description: 'Monthly pension for senior citizens above 60 years under IGNOAPS (Indira Gandhi National Old Age Pension Scheme).',
-    icon: '🏛️',
-    color: '#EBF5FB',
-    difficulty: 'Easy',
-    estimatedDays: 15,
-    minAge: 60,
-    maxAge: 120,
-    eligibility: ['Age 60+ years', 'Below Poverty Line (BPL)', 'Indian citizen', 'Not receiving any other pension'],
-    requiredDocuments: ['Aadhaar Card', 'Age Proof (Birth Certificate / Voter ID)', 'Bank Passbook', 'BPL Certificate', 'Passport-size Photo'],
-    benefits: ['₹200–500/month (Central)', 'Additional state supplement varies', 'Direct bank transfer'],
-    applicationSteps: ['Collect application form from nearest Panchayat office', 'Fill form with required details', 'Attach required documents', 'Submit to Block Development Officer', 'Verification by concerned authority'],
-    fees: 'Free',
-  },
-  {
-    title: 'PM Vaya Vandana Yojana',
-    category: 'Pension',
-    description: 'Guaranteed pension scheme for senior citizens by LIC providing assured returns on investment.',
-    icon: '💳',
-    color: '#FDF2E9',
-    difficulty: 'Easy',
-    estimatedDays: 7,
-    minAge: 60,
-    maxAge: 120,
-    eligibility: ['Age 60+ years', 'Indian citizen', 'Minimum investment ₹1,56,658'],
-    requiredDocuments: ['Aadhaar Card', 'PAN Card', 'Age Proof', 'Bank Details', 'Address Proof'],
-    benefits: ['Guaranteed 7.4% annual return', 'Monthly/quarterly/annual pension', 'Maximum ₹15 lakh investment'],
-    applicationSteps: ['Visit nearest LIC branch', 'Fill PMVVY application form', 'Submit KYC documents', 'Make investment payment', 'Policy issued within 3–5 days'],
-    fees: 'No processing fee',
-  },
-  {
-    title: 'Ayushman Bharat',
-    category: 'Health',
-    description: 'Government health insurance scheme (PM-JAY) providing ₹5 lakh/year coverage for secondary and tertiary hospitalization.',
-    icon: '🏥',
-    color: '#E8F8F5',
-    difficulty: 'Medium',
-    estimatedDays: 10,
-    minAge: 0,
-    maxAge: 120,
-    eligibility: ['BPL family member', 'SECC 2011 database listed', 'No existing health insurance'],
-    requiredDocuments: ['Aadhaar Card', 'Ration Card', 'Income Certificate', 'Family Photo'],
-    benefits: ['₹5 lakh/year health coverage', 'Cashless treatment at empaneled hospitals', 'Covers pre and post hospitalization'],
-    applicationSteps: ['Check eligibility on mera.pmjay.gov.in', 'Visit nearest CSC or empaneled hospital', 'Submit Aadhaar and ration card', 'E-card generated on verification'],
-    fees: 'Free',
-  },
-  {
-    title: 'Senior Citizen Health Card',
-    category: 'Health',
-    description: 'State-issued health card for senior citizens providing subsidized healthcare at government hospitals.',
-    icon: '🩺',
-    color: '#E8F8F5',
-    difficulty: 'Easy',
-    estimatedDays: 5,
-    minAge: 60,
-    maxAge: 120,
-    eligibility: ['Age 60+ years', 'State resident', 'Valid ID proof'],
-    requiredDocuments: ['Aadhaar Card', 'Age Proof', 'Address Proof', 'Passport Photo'],
-    benefits: ['Free/subsidized treatment', 'Priority at government hospitals', 'Discounted medicines'],
-    applicationSteps: ['Visit nearest PHC or district hospital', 'Submit application with documents', 'Photograph and biometric capture', 'Card issued within 5 working days'],
-    fees: 'Free',
-  },
-  {
-    title: 'Aadhaar Update',
-    category: 'Government',
-    description: 'Update name, address, date of birth, mobile number, or biometrics on your Aadhaar card.',
-    icon: '📄',
-    color: '#FEF9E7',
-    difficulty: 'Easy',
-    estimatedDays: 3,
-    minAge: 0,
-    maxAge: 120,
-    eligibility: ['Existing Aadhaar holder', 'Valid supporting documents for update'],
-    requiredDocuments: ['Current Aadhaar Card', 'Address Proof (for address update)', 'DOB Certificate (for DOB update)'],
-    benefits: ['Updated government ID', 'Correct bank and scheme linkage', 'Essential for all government services'],
-    applicationSteps: ['Visit uidai.gov.in or nearest Aadhaar center', 'Select type of update required', 'Upload/submit supporting documents', 'Biometric verification at center', 'URN issued for tracking'],
-    fees: '₹50 (biometric) / Free (online demographic)',
-  },
-  {
-    title: 'PAN Card Services',
-    category: 'Government',
-    description: 'Apply for new PAN card, correction, or reprint. Essential for financial transactions and tax filing.',
-    icon: '🆔',
-    color: '#F5EEF8',
-    difficulty: 'Easy',
-    estimatedDays: 7,
-    minAge: 18,
-    maxAge: 120,
-    eligibility: ['Indian citizen or NRI', 'Valid identity proof', 'No existing PAN (for new application)'],
-    requiredDocuments: ['Aadhaar Card', 'Passport-size Photo', 'Signature Specimen', 'Address Proof'],
-    benefits: ['Required for ITR filing', 'Bank account operations above ₹50K', 'Financial transactions proof'],
-    applicationSteps: ['Visit onlineservices.nsdl.com', 'Fill Form 49A (Indian) or 49AA (Foreign)', 'Upload documents and photo', 'Pay processing fee online', 'PAN dispatched within 7 days'],
-    fees: '₹107 (Indian address) / ₹1,017 (Foreign address)',
-  },
-  {
-    title: 'Senior Citizen Savings Scheme',
-    category: 'Financial',
-    description: 'High-interest savings scheme (SCSS) exclusively for senior citizens with guaranteed returns.',
-    icon: '🏦',
-    color: '#EAECEE',
-    difficulty: 'Easy',
-    estimatedDays: 2,
-    minAge: 60,
-    maxAge: 120,
-    eligibility: ['Age 60+ years', 'Retired defense personnel 50+', 'Max deposit ₹30 lakh'],
-    requiredDocuments: ['Age Proof', 'Aadhaar Card', 'PAN Card', 'Bank Passbook', '2 Passport Photos'],
-    benefits: ['8.2% annual interest', '5-year tenure (extendable 3 years)', 'Tax deduction under 80C'],
-    applicationSteps: ['Visit nearest post office or authorized bank', 'Fill SCSS application form', 'Submit KYC documents', 'Make deposit via cheque/DD', 'Passbook issued immediately'],
-    fees: 'No charges',
-  },
-  {
-    title: 'EPF Withdrawal',
-    category: 'Financial',
-    description: 'Withdraw Employee Provident Fund balance after retirement or for specific purposes.',
-    icon: '💰',
-    color: '#F2D7D5',
-    difficulty: 'Hard',
-    estimatedDays: 20,
-    minAge: 18,
-    maxAge: 120,
-    eligibility: ['EPF member', 'Age 58+ for full withdrawal', 'Unemployment 2+ months for early withdrawal'],
-    requiredDocuments: ['UAN Number', 'Aadhaar Card', 'PAN Card', 'Bank Account Details', 'Cancelled Cheque'],
-    benefits: ['Full PF balance withdrawal', 'Tax-free after 5 years of service', 'Pension component included'],
-    applicationSteps: ['Login to unifiedportal-mem.epfindia.gov.in', 'Go to Online Services → Claim', 'Select withdrawal type (Form 19/10C/31)', 'Submit with Aadhaar verification', 'Amount credited in 15–20 days'],
-    fees: 'Free',
-  },
-  {
-    title: 'Pradhan Mantri Awas Yojana',
-    category: 'Government',
-    description: 'Housing subsidy scheme for urban and rural poor to build or purchase a house.',
-    icon: '🏠',
-    color: '#EBF5FB',
-    difficulty: 'Medium',
-    estimatedDays: 30,
-    minAge: 21,
-    maxAge: 120,
-    eligibility: ['No pucca house in family', 'Annual income below ₹18 lakh', 'Not availed central housing scheme before'],
-    requiredDocuments: ['Aadhaar Card', 'Income Certificate', 'Property Documents', 'Bank Account', 'Caste Certificate (if applicable)'],
-    benefits: ['Subsidy up to ₹2.67 lakh', 'Interest subsidy on home loan', 'Priority for SC/ST/OBC'],
-    applicationSteps: ['Apply online at pmaymis.gov.in', 'Select CLSS/BLC/AHP/ISSR track', 'Fill application with Aadhaar details', 'Submit income and property documents', 'Track application with reference number'],
-    fees: 'Free application',
-  },
-  {
-    title: 'PM Kisan Samman Nidhi',
-    category: 'Government',
-    description: 'Direct income support of ₹6,000/year to eligible farmer families in three installments.',
-    icon: '🌱',
-    color: '#E8F8F5',
-    difficulty: 'Medium',
-    estimatedDays: 14,
-    minAge: 18,
-    maxAge: 120,
-    eligibility: ['Land-holding farmer family', 'Indian citizen', 'Not a government employee or pensioner'],
-    requiredDocuments: ['Aadhaar Card', 'Land Records / Khasra Number', 'Bank Account Details', 'Mobile Number'],
-    benefits: ['₹6,000/year in 3 installments', 'Direct bank transfer', 'No repayment required'],
-    applicationSteps: ['Visit pmkisan.gov.in', 'Click New Farmer Registration', 'Enter Aadhaar and state details', 'Fill land and bank information', 'Submit for verification by local patwari'],
-    fees: 'Free',
-  },
-  {
-    title: 'Jan Aushadhi Scheme',
-    category: 'Health',
-    description: 'Access quality generic medicines at affordable prices through Pradhan Mantri Bhartiya Janaushadhi Kendras.',
-    icon: '💊',
-    color: '#E8F8F5',
-    difficulty: 'Easy',
-    estimatedDays: 1,
-    minAge: 0,
-    maxAge: 120,
-    eligibility: ['Any Indian citizen', 'No prescription needed for OTC medicines'],
-    requiredDocuments: ['Doctor prescription (for prescription medicines)', 'No ID required'],
-    benefits: ['50–90% cheaper medicines', '1,800+ medicines available', '285+ surgical items'],
-    applicationSteps: ['Find nearest Jan Aushadhi Kendra', 'Carry doctor prescription', 'Purchase medicines at subsidized rates'],
-    fees: 'Pay for medicines only',
-  },
-  {
-    title: 'Life Certificate (Jeevan Pramaan)',
-    category: 'Pension',
-    description: 'Digital life certificate submission for pensioners using Aadhaar biometric authentication.',
-    icon: '📜',
-    color: '#FEF9E7',
-    difficulty: 'Easy',
-    estimatedDays: 1,
-    minAge: 55,
-    maxAge: 120,
-    eligibility: ['Government/state pensioner', 'Aadhaar-linked pension account'],
-    requiredDocuments: ['Aadhaar Card', 'PPO Number', 'Bank Account', 'Mobile Number'],
-    benefits: ['No need to visit bank', 'Digital submission from home', 'Valid for 1 year'],
-    applicationSteps: ['Download Jeevan Pramaan app', 'Enter PPO and Aadhaar details', 'Complete biometric (fingerprint) verification', 'Digital certificate auto-sent to bank/pension authority'],
-    fees: 'Free',
-  },
-];
+const seedData = async () => {
+    try {
+        await mongoose.connect(MONGO_URI);
+        console.log('Connected to MongoDB for seeding...');
 
-const seedServices = async () => {
-  try {
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log('✅ Connected to MongoDB');
+        // Clear existing data
+        await User.deleteMany({});
+        await Document.deleteMany({});
+        await Reminder.deleteMany({});
 
-    await Service.deleteMany({});
-    console.log('🗑️  Cleared existing services');
+        // Create users
+        const users = await User.create([
+            {
+                name: 'Ramesh Kumar',
+                email: 'ramesh@example.com',
+                password: 'password123',
+                age: 65,
+                pensionId: 'PEN-2024-001234',
+                aadhaarNumber: '1234 5678 9012',
+                phone: '9876543210',
+                bankDetails: { accountNumber: '12345678901', ifsc: 'SBIN0001234', bankName: 'State Bank of India' },
+                role: 'user',
+                pensionStatus: 'active',
+                monthlyPension: 25000
+            },
+            {
+                name: 'Sunita Devi',
+                email: 'sunita@example.com',
+                password: 'password123',
+                age: 62,
+                pensionId: 'PEN-2024-005678',
+                aadhaarNumber: '9876 5432 1098',
+                phone: '9876543211',
+                bankDetails: { accountNumber: '98765432109', ifsc: 'PUNB0001234', bankName: 'Punjab National Bank' },
+                role: 'user',
+                pensionStatus: 'active',
+                monthlyPension: 22000
+            },
+            {
+                name: 'Admin User',
+                email: 'admin@retireassist.com',
+                password: 'admin123',
+                age: 45,
+                phone: '9876543200',
+                role: 'admin',
+                pensionStatus: 'active',
+                monthlyPension: 0
+            }
+        ]);
 
-    await Service.insertMany(services);
-    console.log(`✅ Seeded ${services.length} services`);
+        console.log(`✅ Created ${users.length} users`);
 
-    process.exit(0);
-  } catch (error) {
-    console.error('❌ Seed error:', error.message);
-    process.exit(1);
-  }
+        // Create documents for Ramesh
+        const docs = await Document.create([
+            {
+                userId: users[0]._id,
+                documentType: 'aadhaar',
+                fileName: 'aadhaar_card.pdf',
+                filePath: '/uploads/aadhaar_card.pdf',
+                extractedData: { name: 'Ramesh Kumar', documentNumber: '1234 5678 9012', dateOfBirth: '15/03/1960', address: '45, Gandhi Nagar, New Delhi' },
+                status: 'verified'
+            },
+            {
+                userId: users[0]._id,
+                documentType: 'pan',
+                fileName: 'pan_card.pdf',
+                filePath: '/uploads/pan_card.pdf',
+                extractedData: { name: 'Ramesh Kumar', documentNumber: 'ABCDE1234F', dateOfBirth: '15/03/1960' },
+                status: 'verified'
+            },
+            {
+                userId: users[0]._id,
+                documentType: 'pension_id',
+                fileName: 'pension_order.pdf',
+                filePath: '/uploads/pension_order.pdf',
+                extractedData: { name: 'Ramesh Kumar', documentNumber: 'PEN-2024-001234' },
+                status: 'verified'
+            }
+        ]);
+
+        console.log(`✅ Created ${docs.length} documents`);
+
+        // Create reminders
+        const reminders = await Reminder.create([
+            {
+                userId: users[0]._id,
+                title: 'Submit Life Certificate',
+                description: 'Annual life certificate submission via Jeevan Pramaan',
+                dueDate: new Date('2026-11-30'),
+                type: 'life_certificate',
+                priority: 'high',
+                status: 'pending'
+            },
+            {
+                userId: users[0]._id,
+                title: 'Pension Verification',
+                description: 'Quarterly pension verification at bank',
+                dueDate: new Date('2026-04-15'),
+                type: 'pension_verification',
+                priority: 'medium',
+                status: 'pending'
+            },
+            {
+                userId: users[0]._id,
+                title: 'Health Insurance Renewal',
+                description: 'Renew CGHS card and update medical records',
+                dueDate: new Date('2026-06-30'),
+                type: 'insurance_renewal',
+                priority: 'medium',
+                status: 'pending'
+            },
+            {
+                userId: users[1]._id,
+                title: 'Submit Life Certificate',
+                description: 'Annual life certificate submission',
+                dueDate: new Date('2026-11-30'),
+                type: 'life_certificate',
+                priority: 'high',
+                status: 'pending'
+            }
+        ]);
+
+        console.log(`✅ Created ${reminders.length} reminders`);
+        console.log('\n🎉 Database seeded successfully!');
+        console.log('\nDemo Accounts:');
+        console.log('  User: ramesh@example.com / password123');
+        console.log('  User: sunita@example.com / password123');
+        console.log('  Admin: admin@retireassist.com / admin123\n');
+
+        process.exit(0);
+    } catch (error) {
+        console.error('Seeding error:', error.message);
+        process.exit(1);
+    }
 };
 
-seedServices();
+seedData();

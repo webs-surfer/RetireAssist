@@ -1,44 +1,21 @@
 const mongoose = require('mongoose');
 
 const paymentSchema = new mongoose.Schema({
-  taskId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Task',
-    required: true,
-  },
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
-  },
-  helperId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  },
-  amount: {
-    type: Number,
-    required: true,
-    min: 0,
-  },
-  status: {
-    type: String,
-    enum: ['pending', 'success', 'completed', 'failed', 'refunded'],
-    default: 'pending',
-  },
-  paymentMethod: {
-    type: String,
-    enum: ['upi', 'card', 'netbanking', 'wallet', 'demo', 'UPI', 'Razorpay', 'Cash', 'NetBanking'],
-    default: 'demo',
-  },
-  method: { type: String, default: 'demo' },
-  transactionId: {
-    type: String,
-    unique: true,
-    sparse: true,
-  },
-  razorpayOrderId: String,
-  razorpayPaymentId: String,
-  paidAt: Date,
+    request: { type: mongoose.Schema.Types.ObjectId, ref: 'Request', required: true },
+    payer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    payee: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    amount: { type: Number, required: true },
+    platformFee: { type: Number, default: 0 }, // 10% commission
+    helperPayout: { type: Number, default: 0 },
+    currency: { type: String, default: 'INR' },
+    status: { type: String, enum: ['created', 'pending', 'completed', 'failed', 'refunded'], default: 'created' },
+    razorpayOrderId: { type: String, default: '' },
+    razorpayPaymentId: { type: String, default: '' },
+    razorpaySignature: { type: String, default: '' },
+    method: { type: String, default: 'razorpay' },
+    payoutStatus: { type: String, enum: ['pending', 'processing', 'paid', 'failed'], default: 'pending' },
+    payoutDate: { type: Date, default: null },
+    notes: { type: String, default: '' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Payment', paymentSchema);

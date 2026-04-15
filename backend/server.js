@@ -1,98 +1,112 @@
 const express = require('express');
 const http = require('http');
-const { Server } = require('socket.io');
-const mongoose = require('mongoose');
 const cors = require('cors');
-const rateLimit = require('express-rate-limit');
-const dotenv = require('dotenv');
 const path = require('path');
-
-dotenv.config();
+const { Server } = require('socket.io');
 const connectDB = require('./config/db');
-const socketHandler = require('./sockets/socketHandler');
+const jwt = require('jsonwebtoken');
 
-// Route imports
-const authRoutes = require('./routes/authRoutes');
-const userRoutes = require('./routes/userRoutes');
-const helperRoutes = require('./routes/helperRoutes');
-const taskRoutes = require('./routes/taskRoutes');
-const chatRoutes = require('./routes/chatRoutes');
-const documentRoutes = require('./routes/documentRoutes');
-const paymentRoutes = require('./routes/paymentRoutes');
-const adminRoutes = require('./routes/adminRoutes');
-const aiChatRoutes = require('./routes/aiChatRoutes');
-const serviceRoutes = require('./routes/serviceRoutes');
-const notificationRoutes = require('./routes/notificationRoutes');
-const ocrRoutes = require('./routes/ocrRoutes');
-
-const { errorHandler, notFound } = require('./middleware/errorMiddleware');
-
-// Connect to DB
-connectDB();
+require('dotenv').config();
 
 const app = express();
-const httpServer = http.createServer(app);
-
-// Socket.IO setup
-const io = new Server(httpServer, {
-  cors: { origin: '*', methods: ['GET', 'POST'] },
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: { origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE'] }
 });
 
-// Make io accessible in controllers
-app.set('io', io);
+connectDB();
 
-// Socket handler
-socketHandler(io);
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 200,
-  message: { success: false, message: 'Too many requests, please try again later.' },
-});
-
-// Middleware
-app.use(cors({ origin: '*' }));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-app.use('/api', limiter);
-
-// Basic request logging
-app.use((req, res, next) => {
-  console.log(`[${req.method}] ${req.url}`);
-  next();
-});
-
-// Static files (uploaded documents)
+app.use(cors());
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Attach io to req for use in routes
+app.use((req, _res, next) => { req.io = io; next(); });
+
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/user', userRoutes);
-app.use('/api/helper', helperRoutes);
-app.use('/api/helpers', helperRoutes);
-app.use('/api/task', taskRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/document', documentRoutes);
-app.use('/api/payment', paymentRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/aichat', aiChatRoutes);
-app.use('/api/services', serviceRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/ocr', ocrRoutes);
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/helpers', require('./routes/helpers'));
+app.use('/api/requests', require('./routes/requests'));
+app.use('/api/tasks', require('./routes/tasks'));
+app.use('/api/documents', require('./routes/documents'));
+app.use('/api/payments', require('./routes/payments'));
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/services', require('./routes/services'));
+app.use('/api/pension', require('./routes/pension'));
+app.use('/api/reminders', require('./routes/reminders'));
+app.use('/api/messages', require('./routes/messages'));
+app.use('/api/chat', require('./routes/chat'));
 
 // Health check
-app.get('/health', (req, res) => {
-  res.json({ success: true, message: 'RetireAssist API is running', timestamp: new Date() });
+app.get('/api/health', (_req, res) => {
+    res.json({ status: 'ok', message: 'RetireAssist API running', timestamp: new Date().toISOString() });
 });
 
-// Error handling
-app.use(notFound);
-app.use(errorHandler);
+// Socket.io — Real-time chat & notifications
+const onlineUsers = new Map(); // userId → socketId
+const JWT_SECRET = process.env.JWT_SECRET || 'retireassist_jwt_secret_2024';
+
+io.on('connection', (socket) => {
+    console.log(`Socket connected: ${socket.id}`);
+
+    // Auth via token in handshake
+    const token = socket.handshake.query?.token || socket.handshake.auth?.token;
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET);
+            socket.userId = decoded.id;
+            onlineUsers.set(decoded.id, socket.id);
+            socket.join(decoded.id); // personal room
+            socket.emit('online', { userId: decoded.id });
+        } catch (e) {
+            console.log('Socket auth failed:', e.message);
+        }
+    }
+
+    socket.on('join', (userId) => {
+        onlineUsers.set(userId, socket.id);
+        socket.userId = socket.userId || userId;
+        socket.join(userId);
+        socket.emit('online', { userId });
+    });
+
+    socket.on('join_room', (room) => socket.join(room));
+    socket.on('leave_room', (room) => socket.leave(room));
+
+    socket.on('send_message', (data) => {
+        // data: { room, senderId, senderName, senderRole, content, type }
+        io.to(data.room).emit('receive_message', { ...data, timestamp: new Date() });
+    });
+
+    socket.on('typing', (data) => {
+        socket.to(data.room).emit('typing', { senderId: data.senderId, senderName: data.senderName });
+    });
+
+    socket.on('stop_typing', (data) => {
+        socket.to(data.room).emit('stop_typing', { senderId: data.senderId });
+    });
+
+    socket.on('notify_user', ({ targetUserId, notification }) => {
+        const targetSocketId = onlineUsers.get(targetUserId);
+        if (targetSocketId) io.to(targetSocketId).emit('notification', notification);
+        // Also emit to personal room
+        io.to(targetUserId).emit('notification', notification);
+    });
+
+    socket.on('disconnect', () => {
+        if (socket.userId) onlineUsers.delete(socket.userId);
+        console.log(`Socket disconnected: ${socket.id}`);
+    });
+});
+
+// Make io & onlineUsers globally accessible for route handlers
+global.io = io;
+global.onlineUsers = onlineUsers;
 
 const PORT = process.env.PORT || 5001;
-httpServer.listen(PORT, () => {
-  console.log(`\n🚀 RetireAssist Server running on port ${PORT}`);
-  console.log(`📡 Socket.IO ready`);
-  console.log(`🌐 Health: http://localhost:${PORT}/health\n`);
+server.listen(PORT, () => {
+    console.log(`\n🚀 RetireAssist Backend running on http://localhost:${PORT}`);
+    console.log(`📋 API Health: http://localhost:${PORT}/api/health\n`);
 });

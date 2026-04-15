@@ -1,69 +1,29 @@
 const mongoose = require('mongoose');
 
 const taskSchema = new mongoose.Schema({
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
-  },
-  helperId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  },
-  serviceType: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  description: {
-    type: String,
-    trim: true,
-  },
-  price: {
-    type: Number,
-    default: 0,
-  },
-  proposedPrice: Number,
-  status: {
-    type: String,
-    enum: ['pending', 'negotiation', 'accepted', 'in-progress', 'documents-submitted', 'admin-review', 'completed', 'rejected', 'cancelled'],
-    default: 'pending',
-  },
-  stage: {
-    type: Number,
-    default: 1,
-    min: 1,
-    max: 5,
-  },
-  stageLabel: {
-    type: String,
-    default: 'Task Started',
-  },
-  instructions: String,
-  location: {
-    address: String,
-    city: String,
-    coordinates: [Number],
-  },
-  startTime: Date,
-  endTime: Date,
-  isPaid: {
-    type: Boolean,
-    default: false,
-  },
-  paymentId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Payment',
-  },
-  documentId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Document',
-  },
-  userRating: {
-    rating: Number,
-    feedback: String,
-    ratedAt: Date,
-  },
+    request: { type: mongoose.Schema.Types.ObjectId, ref: 'Request', required: true },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    helper: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    status: {
+        type: String,
+        enum: ['pending', 'accepted', 'in_progress', 'documents_submitted', 'completed', 'cancelled'],
+        default: 'accepted'
+    },
+    documents: [{
+        name: String,
+        url: String,
+        uploadedAt: { type: Date, default: Date.now }
+    }],
+    timeline: [{
+        status: String,
+        note: String,
+        timestamp: { type: Date, default: Date.now }
+    }],
+    finalDocument: { type: String, default: '' },
+    isDocumentApproved: { type: Boolean, default: false },
+    isPaymentDone: { type: Boolean, default: false },
+    rating: { type: Number, default: 0 },
+    ratingComment: { type: String, default: '' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Task', taskSchema);

@@ -1,21 +1,19 @@
 const mongoose = require('mongoose');
 
 const serviceSchema = new mongoose.Schema({
-  title: { type: String, required: true, trim: true },
-  category: { type: String, required: true, enum: ['Pension', 'Insurance', 'Government', 'Financial', 'Health'] },
-  description: { type: String, trim: true },
-  icon: { type: String, default: '📋' },
-  color: { type: String, default: '#EBF5FB' },
-  difficulty: { type: String, enum: ['Easy', 'Medium', 'Hard'], default: 'Easy' },
-  estimatedDays: { type: Number, default: 7 },
-  minAge: { type: Number, default: 0 },
-  maxAge: { type: Number, default: 120 },
-  eligibility: [String],
-  requiredDocuments: [String],
-  benefits: [String],
-  applicationSteps: [String],
-  fees: { type: String, default: 'Free' },
-  isActive: { type: Boolean, default: true },
+    name: { type: String, required: true },
+    category: {
+        type: String,
+        enum: ['pension', 'insurance', 'tax', 'government', 'banking', 'legal', 'healthcare', 'other'],
+        required: true
+    },
+    description: { type: String, required: true },
+    icon: { type: String, default: '📄' },
+    estimatedDays: { type: Number, default: 7 },
+    basePrice: { type: Number, default: 500 },
+    requiredDocuments: [{ type: String }],
+    steps: [{ type: String }],
+    isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Service', serviceSchema);
