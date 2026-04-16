@@ -37,7 +37,14 @@ app.use('/api/services', require('./routes/services'));
 app.use('/api/pension', require('./routes/pension'));
 app.use('/api/reminders', require('./routes/reminders'));
 app.use('/api/messages', require('./routes/messages'));
+
 app.use('/api/chat', require('./routes/chat'));
+
+// Serve frontend static files (for Render deployment)
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+});
 
 // Health check
 app.get('/api/health', (_req, res) => {
